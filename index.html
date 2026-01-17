@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Art Grid Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="brand">
+                <h1>PixelGrid</h1>
+                <p>Image to Paint-by-Number</p>
+            </div>
+
+            <div class="control-group">
+                <label for="imageUpload" class="control-label">Upload Image</label>
+                <div class="file-upload-wrapper">
+                    <input type="file" id="imageUpload" accept="image/*" />
+                    <button class="btn btn-outline" id="uploadBtn">Choose File</button>
+                    <span id="fileName">No file chosen</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="label-row">
+                    <label for="bgThreshold" class="control-label">Background Threshold</label>
+                    <span id="bgThresholdValue" class="value-display">20</span>
+                </div>
+                <input type="range" id="bgThreshold" min="0" max="100" value="20" class="slider">
+                <p class="control-hint">Adjust to detect background sensitivity.</p>
+            </div>
+
+            <!-- Future controls will go here -->
+            <div class="control-group">
+                <div class="label-row">
+                    <label class="control-label">Grid Layout</label>
+                </div>
+                <div class="grid-controls">
+                    <div class="input-with-label">
+                        <span class="sub-label">W</span>
+                        <input type="number" id="gridWidth" value="32" min="1" max="256" class="number-input">
+                    </div>
+                    <div class="link-btn-wrapper">
+                        <button id="aspectRatioBtn" class="btn-icon active" title="Lock Aspect Ratio">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="input-with-label">
+                        <span class="sub-label">H</span>
+                        <input type="number" id="gridHeight" value="32" min="1" max="256" class="number-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group disabled-group">
+                <div class="label-row">
+                    <label class="control-label">Colors</label>
+                    <span class="value-display">16</span>
+                </div>
+                <input type="range" disabled class="slider">
+            </div>
+
+            <div class="action-area">
+                <button id="processBtn" class="btn btn-primary" disabled>Generate Grid</button>
+            </div>
+        </aside>
+
+        <main class="preview-area">
+            <div class="canvas-container" id="canvasContainer">
+                <div class="empty-state" id="emptyState">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.5">
+                        <path
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p>Upload an image to start</p>
+                </div>
+                <canvas id="mainCanvas"></canvas>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
