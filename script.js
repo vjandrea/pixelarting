@@ -15,6 +15,8 @@ const emptyState = document.getElementById('emptyState');
 const gridWidthInput = document.getElementById('gridWidth');
 const gridHeightInput = document.getElementById('gridHeight');
 const aspectRatioBtn = document.getElementById('aspectRatioBtn');
+const colorCountInput = document.getElementById('colorCount');
+const colorCountValue = document.getElementById('colorCountValue');
 
 // Offscreen canvas for original image processing
 const workCanvas = document.createElement('canvas');
@@ -28,6 +30,13 @@ let currentAspectRatio = 1;
 imageUpload.addEventListener('change', handleImageUpload);
 bgThresholdInput.addEventListener('input', updateThresholdDisplay);
 bgThresholdInput.addEventListener('change', () => {
+    if (originalImage) processImage();
+});
+
+colorCountInput.addEventListener('input', (e) => {
+    colorCountValue.textContent = e.target.value;
+});
+colorCountInput.addEventListener('change', () => {
     if (originalImage) processImage();
 });
 
@@ -169,6 +178,12 @@ function processImage() {
         // We act on the cropped region from workCanvas: (minX, minY) size (width, height)
         tempCtx.drawImage(workCanvas, minX, minY, width, height, 0, 0, gridW, gridH);
 
+        // --- Color Quantization (K-Means) ---
+        const k = parseInt(colorCountInput.value) || 16;
+        const tinyImageData = tempCtx.getImageData(0, 0, gridW, gridH);
+        const quantizedData = quantizeColors(tinyImageData, k);
+        tempCtx.putImageData(quantizedData, 0, 0);
+
         // Draw the tiny image back to the main canvas (Upsampling with nearest-neighbor)
         ctx.imageSmoothingEnabled = false;
         ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
@@ -189,4 +204,98 @@ function processImage() {
         mainCanvas.height = originalImage.height;
         ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
     }
+}
+
+// --- Color Quantization Helper ---
+function quantizeColors(imageData, k) {
+    const data = imageData.data;
+    const pixels = [];
+    
+    // Collect all non-transparent pixels
+    for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] > 0) {
+            pixels.push({
+                r: data[i],
+                g: data[i + 1],
+                b: data[i + 2],
+                index: i
+            });
+        }
+    }
+
+    if (pixels.length === 0 || k >= pixels.length) return imageData;
+
+    // Initialize Centroids (Randomly pick k pixels)
+    let centroids = [];
+    for (let i = 0; i < k; i++) {
+        const p = pixels[Math.floor(Math.random() * pixels.length)];
+        centroids.push({ r: p.r, g: p.g, b: p.b });
+    }
+
+    // K-Means Iterations
+    const maxIterations = 5; // Low iteration count for real-time performance
+    for (let iter = 0; iter < maxIterations; iter++) {
+        const clusters = Array.from({ length: k }, () => []);
+
+        // 1. Assign pixels to nearest centroid
+        pixels.forEach(p => {
+            let minDist = Infinity;
+            let closestIndex = 0;
+            
+            centroids.forEach((c, i) => {
+                const dist = Math.sqrt((p.r - c.r) ** 2 + (p.g - c.g) ** 2 + (p.b - c.b) ** 2);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestIndex = i;
+                }
+            });
+            clusters[closestIndex].push(p);
+        });
+
+        // 2. Recalculate centroids
+        let converged = true;
+        centroids = centroids.map((c, i) => {
+            const cluster = clusters[i];
+            if (cluster.length === 0) return c; // Keep old centroid if empty
+
+            let sumR = 0, sumG = 0, sumB = 0;
+            cluster.forEach(p => {
+                sumR += p.r;
+                sumG += p.g;
+                sumB += p.b;
+            });
+
+            const newR = Math.round(sumR / cluster.length);
+            const newG = Math.round(sumG / cluster.length);
+            const newB = Math.round(sumB / cluster.length);
+
+            if (newR !== c.r || newG !== c.g || newB !== c.b) converged = false;
+
+            return { r: newR, g: newG, b: newB };
+        });
+
+        if (converged) break;
+    }
+
+    // Apply color reduction
+    pixels.forEach(p => {
+        let minDist = Infinity;
+        let closestIndex = 0;
+        
+        centroids.forEach((c, i) => {
+            const dist = Math.sqrt((p.r - c.r) ** 2 + (p.g - c.g) ** 2 + (p.b - c.b) ** 2);
+            if (dist < minDist) {
+                minDist = dist;
+                closestIndex = i;
+            }
+        });
+
+        const finalColor = centroids[closestIndex];
+        data[p.index] = finalColor.r;
+        data[p.index + 1] = finalColor.g;
+        data[p.index + 2] = finalColor.b;
+        // Alpha remains same
+    });
+
+    return imageData;
 }
