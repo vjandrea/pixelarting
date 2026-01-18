@@ -87,4 +87,4 @@ svgMarkup += `
 ### Phase 4: Polish & Deployment
 - [ ] Ensure the SVG layout fits standard A4 printer proportions.
 - [x] Add a "Wireframe Mode" (show numbers only, no color fills) for coloring-book style.
-- [ ] Deploy to GitHub Pages via repository settings.
+- [x] Deploy to GitHub Pages via repository settings.
