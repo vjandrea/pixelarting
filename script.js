@@ -24,6 +24,7 @@ let originalImage = null;
 let isAspectRatioLocked = true;
 let currentAspectRatio = 1;
 let lastProcessedData = null;
+let uploadedFileName = "pixel-art";
 
 // Event Listeners
 imageUpload.addEventListener('change', handleImageUpload);
@@ -84,6 +85,8 @@ function handleImageUpload(e) {
     if (!file) return;
 
     fileNameDisplay.textContent = file.name;
+    // Store original filename without extension for export
+    uploadedFileName = file.name.replace(/\.[^/.]+$/, "");
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -355,7 +358,7 @@ function downloadSVG(svgContent) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `pixel-art-grid.svg`;
+    a.download = `${uploadedFileName}-pixelart.svg`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
