@@ -67,24 +67,24 @@ svgMarkup += `
 ## Implementation Roadmap (To-Do List)
 
 ### Phase 1: UI & File Handling
-- [ ] Build a layout with a control Sidebar and a central Preview Area.
-- [ ] Implement image upload to an off-screen Canvas.
-- [ ] Add sliders for: Background Threshold, Grid Size (e.g., 16 to 128), and Color Count (e.g., 2 to 32).
+- [x] Build a layout with a control Sidebar and a central Preview Area.
+- [x] Implement image upload to an off-screen Canvas.
+- [x] Add sliders for: Background Threshold, Grid Size (e.g., 16 to 128), and Color Count (e.g., 2 to 32).
 
 ### Phase 2: Image Processing Engine
 
-- [ ] Implement removeBackground() function with real-time threshold preview.
-- [ ] Implement autoCrop() to trim empty space based on alpha values.
-- [ ] Implement quantizeColors() using a K-Means algorithm to find dominant colors.
+- [x] Implement removeBackground() function with real-time threshold preview.
+- [x] Implement autoCrop() to trim empty space based on alpha values.
+- [x] Implement quantizeColors() using a K-Means algorithm to find dominant colors.
 
 ### Phase 3: Export & Print Logic
 
-- [ ] Generate an SVG with shape-rendering="crispEdges" for perfect sharpness.
-- [ ] Add a coordinate system: Numbered headers for rows and columns.
-- [ ] Render a Color Legend at the bottom of the SVG showing Color ID vs. Swatch.
-- [ ] Add a "Download SVG" button that triggers a blob download.
+- [x] Generate an SVG with shape-rendering="crispEdges" for perfect sharpness.
+- [x] Add a coordinate system: Numbered headers for rows and columns.
+- [x] Render a Color Legend at the bottom of the SVG showing Color ID vs. Swatch.
+- [x] Add a "Download SVG" button that triggers a blob download.
 
 ### Phase 4: Polish & Deployment
 - [ ] Ensure the SVG layout fits standard A4 printer proportions.
-- [ ] Add a "Wireframe Mode" (show numbers only, no color fills) for coloring-book style.
+- [x] Add a "Wireframe Mode" (show numbers only, no color fills) for coloring-book style.
 - [ ] Deploy to GitHub Pages via repository settings.

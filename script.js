@@ -5,9 +5,7 @@ const bgThresholdInput = document.getElementById('bgThreshold');
 const bgThresholdValue = document.getElementById('bgThresholdValue');
 const processBtn = document.getElementById('processBtn');
 
-processBtn.addEventListener('click', () => {
-    alert("Grid Generation (SVG Export) will be implemented in Phase 3.");
-});
+processBtn.addEventListener('click', generateSVG);
 
 const mainCanvas = document.getElementById('mainCanvas');
 const ctx = mainCanvas.getContext('2d');
@@ -25,6 +23,7 @@ const workCtx = workCanvas.getContext('2d');
 let originalImage = null;
 let isAspectRatioLocked = true;
 let currentAspectRatio = 1;
+let lastProcessedData = null;
 
 // Event Listeners
 imageUpload.addEventListener('change', handleImageUpload);
@@ -184,6 +183,14 @@ function processImage() {
         const quantizedData = quantizeColors(tinyImageData, k);
         tempCtx.putImageData(quantizedData, 0, 0);
 
+        // Save state for Export
+        lastProcessedData = {
+            width: gridW,
+            height: gridH,
+            pixels: quantizedData.data,
+            k: k
+        };
+
         // Draw the tiny image back to the main canvas (Upsampling with nearest-neighbor)
         ctx.imageSmoothingEnabled = false;
         ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
@@ -203,14 +210,163 @@ function processImage() {
         mainCanvas.width = originalImage.width;
         mainCanvas.height = originalImage.height;
         ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+        lastProcessedData = null;
     }
+}
+
+function generateSVG() {
+    if (!lastProcessedData) return;
+
+    const { width, height, pixels } = lastProcessedData;
+    const boxSize = 10; // SVG unit size for one cell
+    const headerSize = 20; // Space for numbering
+    const legendItemHeight = 20;
+
+    // 1. Extract Unique Colors (Palette)
+    const colorMap = new Map();
+    const grid = [];
+    let palette = [];
+
+    for (let i = 0; i < pixels.length; i += 4) {
+        const r = pixels[i];
+        const g = pixels[i + 1];
+        const b = pixels[i + 2];
+        const a = pixels[i + 3];
+
+        if (a === 0) {
+            grid.push(null); // Transparent
+            continue;
+        }
+
+        const hex = rgbToHex(r, g, b);
+        if (!colorMap.has(hex)) {
+            colorMap.set(hex, palette.length + 1);
+            palette.push({ hex, id: palette.length + 1, r, g, b });
+        }
+        grid.push({ hex, id: colorMap.get(hex), r, g, b });
+    }
+
+    // Get User Options
+    const showLegend = document.getElementById('toggleLegend').checked;
+    const showNumbers = document.getElementById('toggleNumbers').checked;
+    const showColors = document.getElementById('toggleColors').checked;
+
+    // Canvas Size
+    // Grid area: width * boxSize, height * boxSize
+    // Margins: left/top for headers
+    // Legend: Bottom
+    const marginLeft = 30;
+    const marginTop = 30;
+    const contentWidth = width * boxSize;
+    const contentHeight = height * boxSize;
+
+    // Calculate Legend Height (only if enabled)
+    let legendHeight = 0;
+    if (showLegend) {
+        legendHeight = Math.ceil(palette.length / 4) * legendItemHeight + 40;
+    }
+
+    const totalWidth = contentWidth + marginLeft + 20;
+    const totalHeight = contentHeight + marginTop + legendHeight;
+
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalWidth} ${totalHeight}" font-family="sans-serif">`;
+
+    // Background
+    svg += `<rect width="100%" height="100%" fill="white" />`;
+
+    // 2. Draw Grid & Numbers
+    const fontSize = boxSize * 0.4;
+
+    // Column Headers (A, B, C...)
+    for (let x = 0; x < width; x++) {
+        const label = getColumnLabel(x);
+        svg += `<text x="${marginLeft + x * boxSize + boxSize / 2}" y="${marginTop - 5}" text-anchor="middle" font-size="10" fill="#666">${label}</text>`;
+    }
+
+    // Row Headers (1, 2, 3...)
+    for (let y = 0; y < height; y++) {
+        svg += `<text x="${marginLeft - 5}" y="${marginTop + y * boxSize + boxSize * 0.7}" text-anchor="end" font-size="10" fill="#666">${y + 1}</text>`;
+    }
+
+    // Grid Cells
+    for (let i = 0; i < grid.length; i++) {
+        const cell = grid[i];
+        if (!cell) continue;
+
+        const x = i % width;
+        const y = Math.floor(i / width);
+        const posX = marginLeft + x * boxSize;
+        const posY = marginTop + y * boxSize;
+
+        // Determine fill color
+        const fill = showColors ? cell.hex : 'white';
+
+        // Determine text color
+        let textColor = 'black';
+        if (showColors) {
+            const brightness = (cell.r * 299 + cell.g * 587 + cell.b * 114) / 1000;
+            textColor = brightness > 128 ? 'black' : 'white';
+        }
+
+        svg += `<g>`;
+        svg += `<rect x="${posX}" y="${posY}" width="${boxSize}" height="${boxSize}" fill="${fill}" stroke="#ddd" stroke-width="0.5" />`;
+
+        // Number inside (only if enabled)
+        if (showNumbers) {
+            svg += `<text x="${posX + boxSize / 2}" y="${posY + boxSize * 0.7}" text-anchor="middle" font-size="${fontSize}" fill="${textColor}">${cell.id}</text>`;
+        }
+        svg += `</g>`;
+    }
+
+    // 3. Draw Legend at Bottom (only if enabled)
+    if (showLegend) {
+        const legendY = marginTop + contentHeight + 20;
+        svg += `<text x="${marginLeft}" y="${legendY}" font-size="14" font-weight="bold" fill="#333">Color Legend</text>`;
+
+        palette.forEach((p, i) => {
+            const lx = marginLeft + (i % 4) * 100; // 4 columns
+            const ly = legendY + 20 + Math.floor(i / 4) * 25;
+
+            svg += `<rect x="${lx}" y="${ly}" width="15" height="15" fill="${p.hex}" stroke="#ccc" />`;
+            svg += `<text x="${lx + 20}" y="${ly + 12}" font-size="12" fill="#333">${p.id}: ${p.hex}</text>`;
+        });
+    }
+
+    svg += `</svg>`;
+
+    downloadSVG(svg);
+}
+
+function getColumnLabel(index) {
+    let label = '';
+    while (index >= 0) {
+        label = String.fromCharCode(65 + (index % 26)) + label;
+        index = Math.floor(index / 26) - 1;
+    }
+    return label;
+}
+
+function rgbToHex(r, g, b) {
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+
+function downloadSVG(svgContent) {
+    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pixel-art-grid.svg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 // --- Color Quantization Helper ---
 function quantizeColors(imageData, k) {
     const data = imageData.data;
     const pixels = [];
-    
+
     // Collect all non-transparent pixels
     for (let i = 0; i < data.length; i += 4) {
         if (data[i + 3] > 0) {
@@ -241,7 +397,7 @@ function quantizeColors(imageData, k) {
         pixels.forEach(p => {
             let minDist = Infinity;
             let closestIndex = 0;
-            
+
             centroids.forEach((c, i) => {
                 const dist = Math.sqrt((p.r - c.r) ** 2 + (p.g - c.g) ** 2 + (p.b - c.b) ** 2);
                 if (dist < minDist) {
@@ -281,7 +437,7 @@ function quantizeColors(imageData, k) {
     pixels.forEach(p => {
         let minDist = Infinity;
         let closestIndex = 0;
-        
+
         centroids.forEach((c, i) => {
             const dist = Math.sqrt((p.r - c.r) ** 2 + (p.g - c.g) ** 2 + (p.b - c.b) ** 2);
             if (dist < minDist) {

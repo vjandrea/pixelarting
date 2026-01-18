@@ -71,8 +71,27 @@
                 <input type="range" id="colorCount" min="2" max="64" value="16" class="slider">
             </div>
 
+            <div class="control-group">
+                <label class="control-label" style="display:block; margin-bottom: 0.5rem">Output Options</label>
+
+                <label class="checkbox-row">
+                    <input type="checkbox" id="toggleLegend" checked>
+                    <span>Show Legend</span>
+                </label>
+
+                <label class="checkbox-row">
+                    <input type="checkbox" id="toggleNumbers" checked>
+                    <span>Paint-by-Numbers</span>
+                </label>
+
+                <label class="checkbox-row">
+                    <input type="checkbox" id="toggleColors" checked>
+                    <span>Show Colors</span>
+                </label>
+            </div>
+
             <div class="action-area">
-                <button id="processBtn" class="btn btn-primary" disabled>Generate Grid</button>
+                <button id="processBtn" class="btn btn-primary" disabled>Download SVG</button>
             </div>
         </aside>
 
