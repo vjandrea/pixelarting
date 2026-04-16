@@ -9,4 +9,4 @@ Convert images into paint-by-number pixel art grids.
 - **Privacy-first**: All processing happens in your browser. No images are uploaded to any server.
 
 ## Live Demo
-[View Demo](https://andreabergamasco.github.io/pixelarting/)
+[View Demo](https://vjandrea.github.io/pixelarting/)
